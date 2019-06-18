@@ -2,8 +2,8 @@
 
 An [issue on github] and an [announcement on reddit] got posted yesterday. Stating that the lead developers of [i3] will merge [i3-gaps] to the main project. The reason being *the overwhelming demand the fork has*.
 
-This clearly goes against: *(from the official [i3] website)*
-  8. The usual elitism amongst minimal window managers: Don’t be bloated, don’t be fancy (**simple borders are the most decoration we want to have**). 
+This clearly goes against: *(from the official [i3] website)*  
+>8. The usual elitism amongst minimal window managers: Don’t be bloated, don’t be fancy (**simple borders are the most decoration we want to have**). 
 
 In my opinion it is letting a loud intolerant minority dictating yet another thing in this day and age (we live in a society). I believe this will be the beginning of the end of i3. It also annoys me that these features are getting implemented when there are functionality in i3 that could be improved, added or removed that would benefit the project, the enduser and the developers in a greater way. All discussion that isn't in favor for the change is being muted (you can see that my comment in the issue thread has been deleted)...  
 
@@ -25,7 +25,7 @@ i3 is not bad. It is by far the best and most advanced dynamic window manager. B
 - window rules. there is a strange issue with window rules getting re-triggered when i3 is reloaded that needs to get fixed. I also believe that the syntax and system could be re-designed and the layout restoring thing could be replaced with a better window/container-rule system.
 - tabs. currently tabbed containers are treated just as any other container, this make switching, creating, moving tabs unnecessary complex. imo, tabs is the best, most useful feature of i3 that other wms lack, and it is a shame it doesn't get more attention.
 - ipc. the current ipc API in i3 is fine. but i would like more (a lot more) commands that would return specific information about the session. This is what the scripts [i3list] and [i3get] in [i3ass] does.
-- moving and resizing could be done in a different way, see [i3Kohrne].
+- moving and resizing could be done in a different way, see [i3Kornhe].
 
 ### Things that could be **added**:  
 - run-or-raise-or-hide function. This is included with f.i. awesomewm, and also with [i3run]. the ability to minimize/hide a window/container is great.
