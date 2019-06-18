@@ -1114,22 +1114,13 @@ void cmd_move_workspace_to_output(I3_CMD, const char *name) {
         }
 
         Output *current_output = get_output_for_con(ws);
-        if (current_output == NULL) {
-            yerror("Cannot get current output. This is a bug in i3.");
-            return;
-        }
-
         Output *target_output = get_output_from_string(current_output, name);
         if (!target_output) {
             yerror("Could not get output from string \"%s\"", name);
             return;
         }
 
-        bool success = workspace_move_to_output(ws, target_output);
-        if (!success) {
-            yerror("Failed to move workspace to output.");
-            return;
-        }
+        workspace_move_to_output(ws, target_output);
     }
 
     cmd_output->needs_tree_render = true;
@@ -1582,7 +1573,7 @@ void cmd_reload(I3_CMD) {
     LOG("reloading\n");
     kill_nagbar(&config_error_nagbar_pid, false);
     kill_nagbar(&command_error_nagbar_pid, false);
-    load_configuration(conn, NULL, true);
+    load_configuration(NULL, C_RELOAD);
     x_set_i3_atoms();
     /* Send an IPC event just in case the ws names have changed */
     ipc_send_workspace_event("reload", NULL, NULL);
@@ -1635,24 +1626,18 @@ void cmd_open(I3_CMD) {
  *
  */
 void cmd_focus_output(I3_CMD, const char *name) {
-    owindow *current;
-
-    DLOG("name = %s\n", name);
-
     HANDLE_EMPTY_MATCH;
 
-    /* get the output */
-    Output *current_output = NULL;
-    Output *output;
+    if (TAILQ_EMPTY(&owindows)) {
+        ysuccess(true);
+        return;
+    }
 
-    TAILQ_FOREACH(current, &owindows, owindows)
-    current_output = get_output_for_con(current->con);
-    assert(current_output != NULL);
-
-    output = get_output_from_string(current_output, name);
+    Output *current_output = get_output_for_con(TAILQ_FIRST(&owindows)->con);
+    Output *output = get_output_from_string(current_output, name);
 
     if (!output) {
-        yerror("No such output found.");
+        yerror("Output %s not found.", name);
         return;
     }
 
@@ -1667,7 +1652,6 @@ void cmd_focus_output(I3_CMD, const char *name) {
     workspace_show(ws);
 
     cmd_output->needs_tree_render = true;
-    // XXX: default reply for now, make this a better reply
     ysuccess(true);
 }
 
@@ -2018,9 +2002,7 @@ void cmd_rename_workspace(I3_CMD, const char *old_name, const char *new_name) {
     cmd_output->needs_tree_render = true;
     ysuccess(true);
 
-    ewmh_update_desktop_names();
-    ewmh_update_desktop_viewport();
-    ewmh_update_current_desktop();
+    ewmh_update_desktop_properties();
 
     startup_sequence_rename_workspace(old_name_copy, new_name);
     free(old_name_copy);

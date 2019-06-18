@@ -539,7 +539,6 @@ bool con_is_internal(Con *con) {
  */
 bool con_is_floating(Con *con) {
     assert(con != NULL);
-    DLOG("checking if con %p is floating\n", con);
     return (con->floating >= FLOATING_AUTO_ON);
 }
 
@@ -1400,8 +1399,6 @@ void con_move_to_output(Con *con, Output *output, bool fix_coordinates) {
  */
 bool con_move_to_output_name(Con *con, const char *name, bool fix_coordinates) {
     Output *current_output = get_output_for_con(con);
-    assert(current_output != NULL);
-
     Output *output = get_output_from_string(current_output, name);
     if (output == NULL) {
         ELOG("Could not find output \"%s\"\n", name);
@@ -2388,6 +2385,8 @@ bool con_swap(Con *first, Con *second) {
     con_fix_percent(first->parent);
     con_fix_percent(second->parent);
 
+    FREE(first->deco_render_params);
+    FREE(second->deco_render_params);
     con_force_split_parents_redraw(first);
     con_force_split_parents_redraw(second);
 

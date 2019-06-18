@@ -420,7 +420,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (only_check_config) {
-        exit(parse_configuration(override_configpath, false) ? 0 : 1);
+        exit(load_configuration(override_configpath, C_VALIDATE) ? 0 : 1);
     }
 
     /* If the user passes more arguments, we act like i3-msg would: Just send
@@ -586,7 +586,7 @@ int main(int argc, char *argv[]) {
 #include "atoms.xmacro"
 #undef xmacro
 
-    load_configuration(conn, override_configpath, false);
+    load_configuration(override_configpath, C_LOAD);
 
     if (config.ipc_socket_path == NULL) {
         /* Fall back to a file name in /tmp/ based on the PID */
@@ -852,10 +852,7 @@ int main(int argc, char *argv[]) {
     ewmh_update_workarea();
 
     /* Set the ewmh desktop properties. */
-    ewmh_update_current_desktop();
-    ewmh_update_number_of_desktops();
-    ewmh_update_desktop_names();
-    ewmh_update_desktop_viewport();
+    ewmh_update_desktop_properties();
 
     struct ev_io *xcb_watcher = scalloc(1, sizeof(struct ev_io));
     xcb_prepare = scalloc(1, sizeof(struct ev_prepare));

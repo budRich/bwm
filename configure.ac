@@ -32,7 +32,7 @@ AX_EXTEND_SRCDIR
 AS_IF([test -d ${srcdir}/.git],
       [
         VERSION="$(git -C ${srcdir} describe --tags --abbrev=0)"
-        I3_VERSION="$(git -C ${srcdir} describe --tags --always) ($(git -C ${srcdir} log --pretty=format:%cd --date=short -n1), branch \\\"$(git -C ${srcdir} describe --tags --always --all | sed s:heads/::)\\\")"
+        I3_VERSION="$(git -C ${srcdir} describe --tags --always) ($(git -C ${srcdir} rev-list --format=%cd --date=short -n1 $(git rev-parse HEAD) | tail -n1), branch \\\"$(git -C ${srcdir} describe --tags --always --all | sed s:heads/::)\\\")"
         # Mirrors what libi3/is_debug_build.c does:
         is_release=$(test $(echo "${I3_VERSION}" | cut -d '(' -f 1 | wc -m) -lt 10 && echo yes || echo no)
       ],
@@ -101,6 +101,7 @@ PKG_CHECK_MODULES([XKBCOMMON], [xkbcommon xkbcommon-x11])
 PKG_CHECK_MODULES([YAJL], [yajl])
 PKG_CHECK_MODULES([LIBPCRE], [libpcre >= 8.10])
 PKG_CHECK_MODULES([PANGOCAIRO], [cairo >= 1.14.4 pangocairo])
+PKG_CHECK_MODULES([GLIBGOBJECT], [glib-2.0 gobject-2.0])
 
 # Checks for programs.
 AC_PROG_AWK
