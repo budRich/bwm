@@ -1,15 +1,15 @@
 ##  this is a fork, bring me the knife.
 
-An [issue on github] and an [announcement on reddit] got posted yesterday. Stating that the lead developers of [i3] will merge [i3-gaps] to the main project. The reason being *overwhelming demand the fork has*.
+An [issue on github] and an [announcement on reddit] got posted yesterday. Stating that the lead developers of [i3] will merge [i3-gaps] to the main project. The reason being *the overwhelming demand the fork has*.
 
 This clearly goes against: *(from the official [i3] website)*
   8. The usual elitism amongst minimal window managers: Don’t be bloated, don’t be fancy (**simple borders are the most decoration we want to have**). 
 
-In my opinion it is letting a loud intolerant minority dictating yet another thing in this day and age. I believe this will be the beginning of the end of i3. It also annoys me that these features are getting implemented when there are functionality in i3 that could be improved, added or removed that would benefit the project, the enduser and the developers in a greater way. All discussion that isn't in favor for the change is being muted (you can see that my comment in the issue thread has been deleted)... whatever.
+In my opinion it is letting a loud intolerant minority dictating yet another thing in this day and age (we live in a society). I believe this will be the beginning of the end of i3. It also annoys me that these features are getting implemented when there are functionality in i3 that could be improved, added or removed that would benefit the project, the enduser and the developers in a greater way. All discussion that isn't in favor for the change is being muted (you can see that my comment in the issue thread has been deleted)... whatever.
 
 ## why fork i3 if it is bad?
 
-i3 is not bad. It is by far the best and most advanced dynamic window manager. But there are some things that really annoys me. I have since a couple of years maintained a repository with bash scripts, called [i3ass] that add or fixes the behavior i would like to have in i3. But there are some things that i3ass doesn't do, and all of it is still 3rd party dirt hack bash scripts, that could be implemented directly into the window manager.  
+i3 is not bad. It is by far the best and most advanced dynamic window manager. But there are some things that really annoys me. I have since a couple of years maintained a repository with bash scripts, called [i3ass] that add or fixes the behavior i would like to have in i3. But there are some things that i3ass doesn't do, and it's 3rd party dirt hack bash scripts, that could be implemented directly into the window manager.  
 
 ## why fork i3 if it is not bad?
 
@@ -32,11 +32,11 @@ i3 is not bad. It is by far the best and most advanced dynamic window manager. B
 
 ## cool, how do i get this bwm?
 
-well.. I just have to modify the old i3 source. I guess i need to learn C, setting up a testing environment, figure out how things work. So it will probably be ready in a year or two.
+well.. I just have to modify the old i3 source. I guess i need to learn C, setting up a testing environment, figure out how things work first. So it will probably be ready in a year or two or never.
 
 ## sounds like you need help
 
-maybe in the future, but right now i think i want to get a grasp of the whole thing and do some stupid experiments on my own. I will let you know.
+maybe in the future, but right now i think i want to get a grasp of the whole thing and do some stupid experiments on my own.
 
 #### budRich - 2019-06-18
 
