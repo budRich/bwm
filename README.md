@@ -5,7 +5,9 @@ An [issue on github] and an [announcement on reddit] got posted yesterday. Stati
 This clearly goes against: *(from the official [i3] website)*
   8. The usual elitism amongst minimal window managers: Don’t be bloated, don’t be fancy (**simple borders are the most decoration we want to have**). 
 
-In my opinion it is letting a loud intolerant minority dictating yet another thing in this day and age (we live in a society). I believe this will be the beginning of the end of i3. It also annoys me that these features are getting implemented when there are functionality in i3 that could be improved, added or removed that would benefit the project, the enduser and the developers in a greater way. All discussion that isn't in favor for the change is being muted (you can see that my comment in the issue thread has been deleted)... whatever.
+In my opinion it is letting a loud intolerant minority dictating yet another thing in this day and age (we live in a society). I believe this will be the beginning of the end of i3. It also annoys me that these features are getting implemented when there are functionality in i3 that could be improved, added or removed that would benefit the project, the enduser and the developers in a greater way. All discussion that isn't in favor for the change is being muted (you can see that my comment in the issue thread has been deleted)...  
+
+whatever.  
 
 ## why fork i3 if it is bad?
 
