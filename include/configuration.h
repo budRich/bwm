@@ -12,9 +12,6 @@
  */
 #pragma once
 
-#include "libi3.h"
-
-#include <stdbool.h>
 #include "queue.h"
 #include "i3.h"
 
@@ -69,8 +66,7 @@ struct Variable {
     char *value;
     char *next_match;
 
-    SLIST_ENTRY(Variable)
-    variables;
+    SLIST_ENTRY(Variable) variables;
 };
 
 /**
@@ -84,8 +80,7 @@ struct Mode {
     bool pango_markup;
     struct bindings_head *bindings;
 
-    SLIST_ENTRY(Mode)
-    modes;
+    SLIST_ENTRY(Mode) modes;
 };
 
 /**
@@ -275,8 +270,7 @@ struct Barconfig {
     /* List of outputs on which the tray is allowed to be shown, in order.
      * The special value "none" disables it (per default, it will be shown) and
      * the special value "primary" enabled it on the primary output. */
-    TAILQ_HEAD(tray_outputs_head, tray_output_t)
-    tray_outputs;
+    TAILQ_HEAD(tray_outputs_head, tray_output_t) tray_outputs;
 
     /* Padding around the tray icons. */
     int tray_padding;
@@ -298,8 +292,7 @@ struct Barconfig {
     /** Bar modifier (to show bar when in hide mode). */
     uint32_t modifier;
 
-    TAILQ_HEAD(bar_bindings_head, Barbinding)
-    bar_bindings;
+    TAILQ_HEAD(bar_bindings_head, Barbinding) bar_bindings;
 
     /** Bar position (bottom by default). */
     enum { P_BOTTOM = 0,
@@ -324,6 +317,9 @@ struct Barconfig {
      * but we invert the bool to get the correct default when initializing with
      * zero. */
     bool hide_workspace_buttons;
+
+    /** The minimal width for workspace buttons. */
+    int workspace_min_width;
 
     /** Strip workspace numbers? Configuration option is
      * 'strip_workspace_numbers yes'. */
@@ -370,8 +366,7 @@ struct Barconfig {
         char *binding_mode_text;
     } colors;
 
-    TAILQ_ENTRY(Barconfig)
-    configs;
+    TAILQ_ENTRY(Barconfig) configs;
 };
 
 /**
@@ -389,39 +384,33 @@ struct Barbinding {
     /** If true, the command will be executed after the button is released. */
     bool release;
 
-    TAILQ_ENTRY(Barbinding)
-    bindings;
+    TAILQ_ENTRY(Barbinding) bindings;
 };
 
 struct tray_output_t {
     char *output;
 
-    TAILQ_ENTRY(tray_output_t)
-    tray_outputs;
+    TAILQ_ENTRY(tray_output_t) tray_outputs;
 };
 
-/**
- * Finds the configuration file to use (either the one specified by
- * override_configpath), the user’s one or the system default) and calls
- * parse_file().
- *
- * If you specify override_configpath, only this path is used to look for a
- * configuration file.
- *
- * If use_nagbar is false, don't try to start i3-nagbar but log the errors to
- * stdout/stderr instead.
- *
- */
-bool parse_configuration(const char *override_configpath, bool use_nagbar);
+typedef enum {
+    C_VALIDATE,
+    C_LOAD,
+    C_RELOAD,
+} config_load_t;
 
 /**
- * Reads the configuration from ~/.i3/config or /etc/i3/config if not found.
+ * (Re-)loads the configuration file (sets useful defaults before).
  *
  * If you specify override_configpath, only this path is used to look for a
  * configuration file.
  *
+ * load_type specifies the type of loading: C_VALIDATE is used to only verify
+ * the correctness of the config file (used with the flag -C). C_LOAD will load
+ * the config for normal use and display errors in the nagbar. C_RELOAD will
+ * also clear the previous config.
  */
-void load_configuration(xcb_connection_t *conn, const char *override_configfile, bool reload);
+bool load_configuration(const char *override_configfile, config_load_t load_type);
 
 /**
  * Ungrabs all keys, to be called before re-grabbing the keys because of a
@@ -429,20 +418,3 @@ void load_configuration(xcb_connection_t *conn, const char *override_configfile,
  *
  */
 void ungrab_all_keys(xcb_connection_t *conn);
-
-/**
- * Sends the current bar configuration as an event to all barconfig_update listeners.
- *
- */
-void update_barconfig(void);
-
-/**
- * Kills the configerror i3-nagbar process, if any.
- *
- * Called when reloading/restarting.
- *
- * If wait_for_it is set (restarting), this function will waitpid(), otherwise,
- * ev is assumed to handle it (reloading).
- *
- */
-void kill_configerror_nagbar(bool wait_for_it);

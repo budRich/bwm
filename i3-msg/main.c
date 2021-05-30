@@ -16,27 +16,17 @@
  */
 #include "libi3.h"
 
-#include <stdio.h>
-#include <stdbool.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
 #include <err.h>
-#include <stdint.h>
 #include <getopt.h>
-#include <limits.h>
+#include <i3/ipc.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include <yajl/yajl_parse.h>
-#include <yajl/yajl_version.h>
-
-#include <xcb/xcb.h>
-#include <xcb/xcb_aux.h>
-
-#include <i3/ipc.h>
 
 /*
  * Having verboselog() and errorlog() is necessary when using libi3.
@@ -67,6 +57,7 @@ typedef struct reply_t {
     char *errorposition;
 } reply_t;
 
+static int exit_code = 0;
 static reply_t last_reply;
 
 static int reply_boolean_cb(void *params, int val) {
@@ -76,8 +67,8 @@ static int reply_boolean_cb(void *params, int val) {
 }
 
 static int reply_string_cb(void *params, const unsigned char *val, size_t len) {
-    char *str = scalloc(len + 1, 1);
-    strncpy(str, (const char *)val, len);
+    char *str = sstrndup((const char *)val, len);
+
     if (strcmp(last_key, "error") == 0)
         last_reply.error = str;
     else if (strcmp(last_key, "input") == 0)
@@ -100,14 +91,14 @@ static int reply_end_map_cb(void *params) {
             fprintf(stderr, "ERROR:               %s\n", last_reply.errorposition);
         }
         fprintf(stderr, "ERROR: %s\n", last_reply.error);
+        exit_code = 2;
     }
     return 1;
 }
 
 static int reply_map_key_cb(void *params, const unsigned char *keyVal, size_t keyLen) {
     free(last_key);
-    last_key = scalloc(keyLen + 1, 1);
-    strncpy(last_key, (const char *)keyVal, keyLen);
+    last_key = sstrndup((const char *)keyVal, keyLen);
     return 1;
 }
 
@@ -126,8 +117,7 @@ static yajl_callbacks reply_callbacks = {
 static char *config_last_key = NULL;
 
 static int config_string_cb(void *params, const unsigned char *val, size_t len) {
-    char *str = scalloc(len + 1, 1);
-    strncpy(str, (const char *)val, len);
+    char *str = sstrndup((const char *)val, len);
     if (strcmp(config_last_key, "config") == 0) {
         fprintf(stdout, "%s", str);
     }
@@ -144,8 +134,7 @@ static int config_end_map_cb(void *params) {
 }
 
 static int config_map_key_cb(void *params, const unsigned char *keyVal, size_t keyLen) {
-    config_last_key = scalloc(keyLen + 1, 1);
-    strncpy(config_last_key, (const char *)keyVal, keyLen);
+    config_last_key = sstrndup((const char *)keyVal, keyLen);
     return 1;
 }
 
@@ -200,6 +189,8 @@ int main(int argc, char *argv[]) {
                 message_type = I3_IPC_MESSAGE_TYPE_GET_BAR_CONFIG;
             } else if (strcasecmp(optarg, "get_binding_modes") == 0) {
                 message_type = I3_IPC_MESSAGE_TYPE_GET_BINDING_MODES;
+            } else if (strcasecmp(optarg, "get_binding_state") == 0) {
+                message_type = I3_IPC_MESSAGE_TYPE_GET_BINDING_STATE;
             } else if (strcasecmp(optarg, "get_version") == 0) {
                 message_type = I3_IPC_MESSAGE_TYPE_GET_VERSION;
             } else if (strcasecmp(optarg, "get_config") == 0) {
@@ -210,7 +201,7 @@ int main(int argc, char *argv[]) {
                 message_type = I3_IPC_MESSAGE_TYPE_SUBSCRIBE;
             } else {
                 printf("Unknown message type\n");
-                printf("Known types: run_command, get_workspaces, get_outputs, get_tree, get_marks, get_bar_config, get_binding_modes, get_version, get_config, send_tick, subscribe\n");
+                printf("Known types: run_command, get_workspaces, get_outputs, get_tree, get_marks, get_bar_config, get_binding_modes, get_binding_state, get_version, get_config, send_tick, subscribe\n");
                 exit(EXIT_FAILURE);
             }
         } else if (o == 'q') {
@@ -326,5 +317,5 @@ int main(int argc, char *argv[]) {
 
     close(sockfd);
 
-    return 0;
+    return exit_code;
 }

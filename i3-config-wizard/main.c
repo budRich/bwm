@@ -10,6 +10,8 @@
  */
 #include <config.h>
 
+#include "libi3.h"
+
 #if defined(__FreeBSD__)
 #include <sys/param.h>
 #endif
@@ -23,37 +25,33 @@
 #define _WITH_GETLINE
 #endif
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <string.h>
 #include <ctype.h>
-#include <errno.h>
 #include <err.h>
-#include <stdint.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <glob.h>
-#include <assert.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_event.h>
 #include <xcb/xcb_keysyms.h>
-
-#include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-x11.h>
+#include <xkbcommon/xkbcommon.h>
 
 #define SN_API_NOT_YET_FROZEN 1
 #include <libsn/sn-launchee.h>
 
+#include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
-#include <X11/XKBlib.h>
+
+#include "i3-config-wizard-atoms.xmacro.h"
 
 /* We need SYSCONFDIR for the path to the keycode config template, so raise an
  * error if it’s not defined for whatever reason */
@@ -68,7 +66,7 @@
     } while (0)
 
 #include "xcb.h"
-#include "libi3.h"
+xcb_visualtype_t *visual_type = NULL;
 
 #define TEXT_PADDING logical_px(4)
 #define WIN_POS_X logical_px(490)
@@ -822,7 +820,7 @@ int main(int argc, char *argv[]) {
     int screen;
     if ((conn = xcb_connect(NULL, &screen)) == NULL ||
         xcb_connection_has_error(conn))
-        errx(1, "Cannot open display\n");
+        errx(1, "Cannot open display");
 
     if (xkb_x11_setup_xkb_extension(conn,
                                     XKB_X11_MIN_MAJOR_XKB_VERSION,
@@ -847,7 +845,7 @@ int main(int argc, char *argv[]) {
 /* Place requests for the atoms we need as soon as possible */
 #define xmacro(atom) \
     xcb_intern_atom_cookie_t atom##_cookie = xcb_intern_atom(conn, 0, strlen(#atom), #atom);
-#include "atoms.xmacro"
+    CONFIG_WIZARD_ATOMS_XMACRO
 #undef xmacro
 
     /* Init startup notification. */
@@ -859,7 +857,7 @@ int main(int argc, char *argv[]) {
     root = root_screen->root;
 
     if (!(modmap_reply = xcb_get_modifier_mapping_reply(conn, modmap_cookie, NULL)))
-        errx(EXIT_FAILURE, "Could not get modifier mapping\n");
+        errx(EXIT_FAILURE, "Could not get modifier mapping");
 
     xcb_numlock_mask = get_mod_mask_for(XCB_NUM_LOCK, symbols, modmap_reply);
 
@@ -899,12 +897,12 @@ int main(int argc, char *argv[]) {
     do {                                                                                   \
         xcb_intern_atom_reply_t *reply = xcb_intern_atom_reply(conn, name##_cookie, NULL); \
         if (!reply)                                                                        \
-            errx(EXIT_FAILURE, "Could not get atom " #name "\n");                          \
+            errx(EXIT_FAILURE, "Could not get atom " #name);                               \
                                                                                            \
         A_##name = reply->atom;                                                            \
         free(reply);                                                                       \
     } while (0);
-#include "atoms.xmacro"
+    CONFIG_WIZARD_ATOMS_XMACRO
 #undef xmacro
 
     /* Set dock mode */

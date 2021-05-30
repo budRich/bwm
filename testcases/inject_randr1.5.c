@@ -16,15 +16,17 @@
 
 #include <ev.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
+#include <getopt.h>
 #include <libgen.h>
+#include <sys/mman.h>
+#include <sys/resource.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 static void uds_connection_cb(EV_P_ ev_io *w, int revents);
 static void read_client_setup_request_cb(EV_P_ ev_io *w, int revents);
@@ -59,7 +61,7 @@ struct connstate {
     ev_io *clientw;
 
     /* serverw is a libev watcher for the connection to X11 which we initiated
-	 * on behalf of the client. */
+     * on behalf of the client. */
     ev_io *serverw;
 
     /* sequence is the client-side sequence number counter. In X11’s wire
@@ -402,7 +404,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (optind >= argc) {
-        errx(EXIT_FAILURE, "syntax: %s [options] <command>\n", argv[0]);
+        errx(EXIT_FAILURE, "syntax: %s [options] <command>", argv[0]);
     }
 
     int fd = socket(AF_LOCAL, SOCK_STREAM, 0);

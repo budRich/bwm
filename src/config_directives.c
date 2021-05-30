@@ -9,9 +9,6 @@
  */
 #include "all.h"
 
-#include <float.h>
-#include <stdarg.h>
-
 /*******************************************************************************
  * Criteria functions.
  ******************************************************************************/
@@ -122,13 +119,13 @@ CFGFUN(mode_binding, const char *bindtype, const char *modifiers, const char *ke
 }
 
 CFGFUN(enter_mode, const char *pango_markup, const char *modename) {
-    if (strcasecmp(modename, DEFAULT_BINDING_MODE) == 0) {
+    if (strcmp(modename, DEFAULT_BINDING_MODE) == 0) {
         ELOG("You cannot use the name %s for your mode\n", DEFAULT_BINDING_MODE);
         return;
     }
 
     struct Mode *mode;
-    SLIST_FOREACH(mode, &modes, modes) {
+    SLIST_FOREACH (mode, &modes, modes) {
         if (strcmp(mode->name, modename) == 0) {
             ELOG("The binding mode with name \"%s\" is defined at least twice.\n", modename);
         }
@@ -268,6 +265,8 @@ CFGFUN(disable_randr15, const char *value) {
 CFGFUN(focus_wrapping, const char *value) {
     if (strcmp(value, "force") == 0) {
         config.focus_wrapping = FOCUS_WRAPPING_FORCE;
+    } else if (strcmp(value, "workspace") == 0) {
+        config.focus_wrapping = FOCUS_WRAPPING_WORKSPACE;
     } else if (eval_boolstr(value)) {
         config.focus_wrapping = FOCUS_WRAPPING_ON;
     } else {
@@ -334,30 +333,41 @@ CFGFUN(show_marks, const char *value) {
     config.show_marks = eval_boolstr(value);
 }
 
-CFGFUN(workspace, const char *workspace, const char *outputs) {
-    DLOG("Assigning workspace \"%s\" to outputs \"%s\"\n", workspace, outputs);
-    /* Check for earlier assignments of the same workspace so that we
-     * don’t have assignments of a single workspace to different
-     * outputs */
+static char *current_workspace = NULL;
+
+CFGFUN(workspace, const char *workspace, const char *output) {
     struct Workspace_Assignment *assignment;
-    TAILQ_FOREACH(assignment, &ws_assignments, ws_assignments) {
-        if (strcasecmp(assignment->name, workspace) == 0) {
-            ELOG("You have a duplicate workspace assignment for workspace \"%s\"\n",
-                 workspace);
+
+    /* When a new workspace line is encountered, for the first output word,
+     * $workspace from the config.spec is non-NULL. Afterwards, the parser calls
+     * clear_stack() because of the call line. Thus, we have to preserve the
+     * workspace string. */
+    if (workspace) {
+        FREE(current_workspace);
+
+        TAILQ_FOREACH (assignment, &ws_assignments, ws_assignments) {
+            if (strcasecmp(assignment->name, workspace) == 0) {
+                ELOG("You have a duplicate workspace assignment for workspace \"%s\"\n",
+                     workspace);
+                return;
+            }
+        }
+
+        current_workspace = sstrdup(workspace);
+    } else {
+        if (!current_workspace) {
+            DLOG("Both workspace and current_workspace are NULL, assuming we had an error before\n");
             return;
         }
+        workspace = current_workspace;
     }
 
-    char *buf = sstrdup(outputs);
-    char *output = strtok(buf, " ");
-    while (output != NULL) {
-        assignment = scalloc(1, sizeof(struct Workspace_Assignment));
-        assignment->name = sstrdup(workspace);
-        assignment->output = sstrdup(output);
-        TAILQ_INSERT_TAIL(&ws_assignments, assignment, ws_assignments);
-        output = strtok(NULL, " ");
-    }
-    free(buf);
+    DLOG("Assigning workspace \"%s\" to output \"%s\"\n", workspace, output);
+
+    assignment = scalloc(1, sizeof(struct Workspace_Assignment));
+    assignment->name = sstrdup(workspace);
+    assignment->output = sstrdup(output);
+    TAILQ_INSERT_TAIL(&ws_assignments, assignment, ws_assignments);
 }
 
 CFGFUN(ipc_socket, const char *path) {
@@ -529,7 +539,7 @@ static void bar_configure_binding(const char *button, const char *release, const
     const bool release_bool = release != NULL;
 
     struct Barbinding *current;
-    TAILQ_FOREACH(current, &(current_bar->bar_bindings), bindings) {
+    TAILQ_FOREACH (current, &(current_bar->bar_bindings), bindings) {
         if (current->input_code == input_code && current->release == release_bool) {
             ELOG("command for button %s was already specified, ignoring.\n", button);
             return;
@@ -633,6 +643,10 @@ CFGFUN(bar_binding_mode_indicator, const char *value) {
 
 CFGFUN(bar_workspace_buttons, const char *value) {
     current_bar->hide_workspace_buttons = !eval_boolstr(value);
+}
+
+CFGFUN(bar_workspace_min_width, const long width) {
+    current_bar->workspace_min_width = width;
 }
 
 CFGFUN(bar_strip_workspace_numbers, const char *value) {

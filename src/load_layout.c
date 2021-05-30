@@ -10,10 +10,9 @@
  */
 #include "all.h"
 
-#include <yajl/yajl_common.h>
-#include <yajl/yajl_gen.h>
+#include <locale.h>
+
 #include <yajl/yajl_parse.h>
-#include <yajl/yajl_version.h>
 
 /* TODO: refactor the whole parsing thing */
 
@@ -31,15 +30,21 @@ static bool parsing_marks;
 struct Match *current_swallow;
 static bool swallow_is_empty;
 static int num_marks;
-static char **marks;
+/* We need to save each container that needs to be marked if we want to support
+ * marking non-leaf containers. In their case, the end_map for their children is
+ * called before their own end_map, so marking json_node would end up marking
+ * the latest child. We can't just mark containers immediately after we parse a
+ * mark because of #2511. */
+struct pending_marks {
+    char *mark;
+    Con *con_to_be_marked;
+} * marks;
 
 /* This list is used for reordering the focus stack after parsing the 'focus'
  * array. */
 struct focus_mapping {
     int old_id;
-
-    TAILQ_ENTRY(focus_mapping)
-    focus_mappings;
+    TAILQ_ENTRY(focus_mapping) focus_mappings;
 };
 
 static TAILQ_HEAD(focus_mappings_head, focus_mapping) focus_mappings =
@@ -133,24 +138,25 @@ static int json_end_map(void *ctx) {
             // Also set a size if none was supplied, otherwise the placeholder
             // window cannot be created as X11 requests with width=0 or
             // height=0 are invalid.
-            const Rect zero = {0, 0, 0, 0};
-            if (memcmp(&(json_node->rect), &zero, sizeof(Rect)) == 0) {
+            if (rect_equals(json_node->rect, (Rect){0, 0, 0, 0})) {
                 DLOG("Geometry not set, combining children\n");
                 Con *child;
-                TAILQ_FOREACH(child, &(json_node->nodes_head), nodes) {
+                TAILQ_FOREACH (child, &(json_node->nodes_head), nodes) {
                     DLOG("child geometry: %d x %d\n", child->geometry.width, child->geometry.height);
                     json_node->rect.width += child->geometry.width;
                     json_node->rect.height = max(json_node->rect.height, child->geometry.height);
                 }
             }
 
-            floating_check_size(json_node);
+            floating_check_size(json_node, false);
         }
 
         if (num_marks > 0) {
             for (int i = 0; i < num_marks; i++) {
-                con_mark(json_node, marks[i], MM_ADD);
-                free(marks[i]);
+                Con *con = marks[i].con_to_be_marked;
+                char *mark = marks[i].mark;
+                con_mark(con, mark, MM_ADD);
+                free(mark);
             }
 
             FREE(marks);
@@ -161,6 +167,19 @@ static int json_end_map(void *ctx) {
         con_attach(json_node, json_node->parent, true);
         LOG("Creating window\n");
         x_con_init(json_node);
+
+        /* Fix erroneous JSON input regarding floating containers to avoid
+         * crashing, see #3901. */
+        const int old_floating_mode = json_node->floating;
+        if (old_floating_mode >= FLOATING_AUTO_ON && json_node->parent->type != CT_FLOATING_CON) {
+            LOG("Fixing floating node without CT_FLOATING_CON parent\n");
+
+            /* Force floating_enable to work */
+            json_node->floating = FLOATING_AUTO_OFF;
+            floating_enable(json_node, false);
+            json_node->floating = old_floating_mode;
+        }
+
         json_node = json_node->parent;
         incomplete--;
         DLOG("incomplete = %d\n", incomplete);
@@ -195,10 +214,10 @@ static int json_end_array(void *ctx) {
     if (parsing_focus) {
         /* Clear the list of focus mappings */
         struct focus_mapping *mapping;
-        TAILQ_FOREACH_REVERSE(mapping, &focus_mappings, focus_mappings_head, focus_mappings) {
+        TAILQ_FOREACH_REVERSE (mapping, &focus_mappings, focus_mappings_head, focus_mappings) {
             LOG("focus (reverse) %d\n", mapping->old_id);
             Con *con;
-            TAILQ_FOREACH(con, &(json_node->focus_head), focused) {
+            TAILQ_FOREACH (con, &(json_node->focus_head), focused) {
                 if (con->old_id != mapping->old_id)
                     continue;
                 LOG("got it! %p\n", con);
@@ -274,8 +293,9 @@ static int json_string(void *ctx, const unsigned char *val, size_t len) {
         char *mark;
         sasprintf(&mark, "%.*s", (int)len, val);
 
-        marks = srealloc(marks, (++num_marks) * sizeof(char *));
-        marks[num_marks - 1] = sstrdup(mark);
+        marks = srealloc(marks, (++num_marks) * sizeof(struct pending_marks));
+        marks[num_marks - 1].mark = sstrdup(mark);
+        marks[num_marks - 1].con_to_be_marked = json_node;
     } else {
         if (strcasecmp(last_key, "name") == 0) {
             json_node->name = scalloc(len + 1, 1);
@@ -409,6 +429,9 @@ static int json_string(void *ctx, const unsigned char *val, size_t len) {
             else if (strcasecmp(buf, "changed") == 0)
                 json_node->scratchpad_state = SCRATCHPAD_CHANGED;
             free(buf);
+        } else if (strcasecmp(last_key, "previous_workspace_name") == 0) {
+            FREE(previous_workspace_name);
+            previous_workspace_name = sstrndup((const char *)val, len);
         }
     }
     return 1;

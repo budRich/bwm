@@ -18,9 +18,11 @@ static int num_screens;
  */
 static Output *get_screen_at(unsigned int x, unsigned int y) {
     Output *output;
-    TAILQ_FOREACH(output, &outputs, outputs)
-    if (output->rect.x == x && output->rect.y == y)
-        return output;
+    TAILQ_FOREACH (output, &outputs, outputs) {
+        if (output->rect.x == x && output->rect.y == y) {
+            return output;
+        }
+    }
 
     return NULL;
 }
@@ -74,7 +76,7 @@ void fake_outputs_init(const char *output_spec) {
             else
                 TAILQ_INSERT_TAIL(&outputs, new_output, outputs);
             output_init_con(new_output);
-            init_ws_for_output(new_output, output_get_content(new_output->con));
+            init_ws_for_output(new_output);
             num_screens++;
         }
         new_output->primary = primary;
@@ -82,6 +84,6 @@ void fake_outputs_init(const char *output_spec) {
 
     if (num_screens == 0) {
         ELOG("No screens found. Please fix your setup. i3 will exit now.\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 }

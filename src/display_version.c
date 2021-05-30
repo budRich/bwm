@@ -10,13 +10,9 @@
  */
 #include "all.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 #include <fcntl.h>
 #include <time.h>
+#include <unistd.h>
 
 static bool human_readable_key, loaded_config_file_name_key;
 static char *human_readable_version, *loaded_config_file_name;
@@ -55,6 +51,13 @@ static yajl_callbacks version_callbacks = {
  *
  */
 void display_running_version(void) {
+    if (getenv("DISPLAY") == NULL) {
+        fprintf(stderr, "\nYour DISPLAY environment variable is not set.\n");
+        fprintf(stderr, "Are you running i3 via SSH or on a virtual console?\n");
+        fprintf(stderr, "Try DISPLAY=:0 i3 --moreversion\n");
+        exit(EXIT_FAILURE);
+    }
+
     char *pid_from_atom = root_atom_contents("I3_PID", conn, conn_screen);
     if (pid_from_atom == NULL) {
         /* If I3_PID is not set, the running version is older than 4.2-200. */
@@ -91,7 +94,8 @@ void display_running_version(void) {
     if (state != yajl_status_ok)
         errx(EXIT_FAILURE, "Could not parse my own reply. That's weird. reply is %.*s", (int)reply_length, reply);
 
-    printf("\rRunning i3 version: %s (pid %s)\n", human_readable_version, pid_from_atom);
+    printf("\r\x1b[K");
+    printf("Running i3 version: %s (pid %s)\n", human_readable_version, pid_from_atom);
 
     if (loaded_config_file_name) {
         struct stat sb;
